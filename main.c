@@ -14,6 +14,10 @@
 const int MAX_SEQ = 100000;
 const char IGNORE_CHAR = '.';
 const int PHRED = 33;
+const char GAP_CHAR0 = '.';
+const char GAP_CHAR1 = '-';
+const char GAP_CHAR2 = 'N';
+const char GAP_CHAR3 = 'X';
 
 // define score matrix
 char *nucnuc[324] = {
@@ -60,10 +64,15 @@ double nucnucscore[324] = {
 KSEQ_INIT(gzFile, gzread)
 
 //------------------------------------------------------------------------
-size_t distance(const char* restrict a, const char* restrict b, size_t L)
+size_t distance(const char* restrict a, const char* restrict b, size_t L, int remgaps, int usesite[])
 {
-  size_t diff=0;
-  for (size_t i=0; i < L; i++) {
+  size_t diff = 0;
+  for (size_t i = 0; i < L; i++) {
+    if (remgaps) {
+      if (usesite[i] == 0) {
+        continue;
+      }
+    }
     if (a[i] != b[i] && a[i] != IGNORE_CHAR && b[i] != IGNORE_CHAR) {
       diff++;
     }
@@ -71,26 +80,32 @@ size_t distance(const char* restrict a, const char* restrict b, size_t L)
   return diff;
 }
 
-void literaldistance(const char* restrict a, const char* restrict b, size_t L, double scorematrix[][57], double about[])
+void literaldistance(const char* restrict a, const char* restrict b, size_t L, double scorematrix[][57], double about[], int remgaps, int usesite[])
 {
-  double abdist=0.0;
-  double abnsites=0.0;
-  double abscore=0.0;
-  double abscoreij=0.0;
+  double abdist = 0.0;
+  double abnsites = 0.0;
+  double abscore = 0.0;
+  double abscoreij = 0.0;
   int ai, bi;
   abnsites = L;
-  for (size_t i=0; i < L; i++) {
+  for (size_t i = 0; i < L; i++) {
+    if (remgaps) {
+      if (usesite[i] == 0) {
+        abnsites-=1.0;
+        continue;
+      }
+    }
     if (a[i] != IGNORE_CHAR && b[i] != IGNORE_CHAR) {
-        ai = a[i];
-        bi = b[i];
-        abscoreij=scorematrix[ai-PHRED][bi-PHRED];
-        //printf("i: %zu a[i]: %c %d b[i]: %c %d score: %f\n", i, a[i], ai, b[i], bi, abscore);
-        if(abscoreij>=0){
-          //abnsites+=1.0;
-          abscore+=abscoreij;
-        } else{
-          abnsites-=1.0;
-        }
+      ai = a[i];
+      bi = b[i];
+      abscoreij=scorematrix[ai-PHRED][bi-PHRED];
+      //printf("i: %zu a[i]: %c %d b[i]: %c %d score: %f\n", i, a[i], ai, b[i], bi, abscore);
+      if (abscoreij>=0) {
+        //abnsites+=1.0;
+        abscore+=abscoreij;
+      } else {
+        abnsites-=1.0;
+      }
     } else {
       abnsites-=1.0;
     }
@@ -106,7 +121,7 @@ void literaldistance(const char* restrict a, const char* restrict b, size_t L, d
 void show_help(int retcode)
 {
   FILE* out = (retcode == EXIT_SUCCESS ? stdout : stderr);
-
+  
   static const char str[] = {
       "SYNOPSIS\n  Pairwise literal distance matrix from a FASTA alignment\n"
       "USAGE\n  %s [options] alignment.fasta[.gz] > matrix.tsv\n"
@@ -120,6 +135,8 @@ void show_help(int retcode)
       "  -m\tOutput MOLTEN instead of TSV\n"
       "  -c\tUse comma instead of tab in output\n"
       "  -b\tBlank top left corner cell\n"
+      "  -g\tSkip gap sites if gap frequency is met, gap sites [.-NX]\n"
+      "  -z\tGap frequency [default: 0.5]\n" 
       "URL\n  %s\n"};
   fprintf(out, str, EXENAME, GITHUB_URL);
   exit(retcode);
@@ -129,8 +146,10 @@ void show_help(int retcode)
 int main(int argc, char* argv[])
 {
   // parse command line parameters
-  int opt, quiet = 0, csv = 0, corner = 1, allchars = 0, keepcase = 0, molten = 0, snpdists = 0;
-  while ((opt = getopt(argc, argv, "htqcakmbv")) != -1) {
+  int opt, quiet = 0, csv = 0, corner = 1, allchars = 0, remgaps = 0, keepcase = 0, molten = 0, snpdists = 0;
+  double gapfreq = 0.5;
+  int gapsites = 0;
+  while ((opt = getopt(argc, argv, "htqcakmbgz:v")) != -1) {
     switch (opt) {
       case 'h': show_help(EXIT_SUCCESS); break;
       case 't': snpdists = 1; break;
@@ -140,35 +159,33 @@ int main(int argc, char* argv[])
       case 'k': keepcase = 1; break;
       case 'm': molten = 1; break;
       case 'b': corner = 0; break;
+      case 'g': remgaps = 1; break;
+      case 'z': gapfreq = strtod(optarg, NULL); break;
       case 'v': printf("%s %s\n", EXENAME, VERSION); exit(EXIT_SUCCESS);
       default: show_help(EXIT_FAILURE);
     }
   }
-
   // require a filename argument
   if (optind >= argc) {
     show_help(EXIT_FAILURE);
     return 0;
   }
   const char* fasta = argv[optind];
-
   // say hello
-  if (!quiet)
+  if (!quiet) {
     fprintf(stderr, "This is %s %s\n", EXENAME, VERSION);
-
+  }
   // open filename via libz
   gzFile fp = gzopen(fasta, "r");
   if (!fp) {
     fprintf(stderr, "ERROR: Could not open filename '%s'\n", fasta);
     exit(EXIT_FAILURE);
   }
-
   // load all the sequences
   char** seq = calloc(MAX_SEQ, sizeof(char*));
   char** name = calloc(MAX_SEQ, sizeof(char*));
   ssize_t l, N=0, L=-1;
   kseq_t* kseq = kseq_init(fp);
-
   while ((l = kseq_read(kseq)) >= 0) {
     // first sequence
     if (L < 0) {
@@ -194,14 +211,12 @@ int main(int argc, char* argv[])
     strcpy(seq[N], kseq->seq.s);
     name[N] = (char*)calloc(kseq->name.l + 1, sizeof(char));
     strcpy(name[N], kseq->name.s);
-
     // uppercase all sequences
     if (!keepcase) {
       for (char* s = seq[N]; *s; s++) {
         *s = toupper(*s);
       }
     }
-
     // clean the sequence depending on -a option
     if (!allchars) {
       for (char* s = seq[N]; *s; s++) {
@@ -216,24 +231,20 @@ int main(int argc, char* argv[])
         }
       }
     }
-
     // keep track of how many we have
     N++;
   }
   kseq_destroy(kseq);
   gzclose(fp);
-
   if (N < 1) {
     fprintf(stderr, "ERROR: file contained no sequences\n");
     exit(EXIT_FAILURE);
   }
-
-  if (!quiet)
+  if (!quiet) {
     fprintf(stderr, "Read %zu sequences of length %zu\n", N, L);
-
+  }
   // output TSV or CSV
   char sep = csv ? ',' : '\t';
-
   // create score matrix
   double scorematrix[57][57] = {{0.0}};
   if (!snpdists) {
@@ -242,26 +253,62 @@ int main(int argc, char* argv[])
         scorematrix[nucnuc[i][0]-PHRED][nucnuc[i][1]-PHRED]=nucnucscore[i];
     }
   }
-
+  // create gap frequencies
+  double gfreq[L];
+  int usesite[L];
+  if (remgaps) {
+    for (int i = 0; i < L; i++) {
+      gfreq[i] = 0.0;
+      usesite[i] = 1;
+    }
+    for (int j = 0; j < N; j++) {
+      const char* restrict seq_j;
+      seq_j = seq[j];
+      for (int i = 0; i < L; i++) {
+        if (seq_j[i] == GAP_CHAR0 || seq_j[i] == GAP_CHAR1 || seq_j[i] == GAP_CHAR2 || seq_j[i] == GAP_CHAR3) {
+          gfreq[i] += 1;  
+        }
+      }
+    }
+    for (int i = 0; i < L; i++) {
+      gfreq[i] = gfreq[i]/N;
+      // printf("gapfreq site: %d = %f\n", i, gfreq[i]);
+      if (gfreq[i] >= gapfreq) {
+        usesite[i] = 0;
+  gapsites += 1;
+  // printf("skip site: %d\n", i);
+      }
+    }
+  }
   if (molten) {
     // "molten" format, one row per pair
+    if (!quiet) {
+      if (remgaps) {
+        printf("#seq1%cseq2%cdist%cscore%cnsites%cgapsites\n", sep, sep, sep, sep, sep);
+      } else {
+        printf("#seq1%cseq2%cdist%cscore%cnsites\n", sep, sep, sep, sep);
+      }
+    }
     for (int j = 0; j < N; j++) {
-      for (int i=0; i < N; i++) {
+      for (int i = 0; i < N; i++) {
         if(snpdists){
-            size_t d = distance(seq[j], seq[i], L);
+            size_t d = distance(seq[j], seq[i], L, remgaps, usesite);
             printf("%s%c%s%c%zu\n", name[j], sep, name[i], sep, d);
         } else{
           double about[3];
-          literaldistance(seq[j], seq[i], L, scorematrix, about);
+          literaldistance(seq[j], seq[i], L, scorematrix, about, remgaps, usesite);
           //printf("abdist: %f abscore: %f abnsites: %f\n", about[0], about[1], about[2]);
-          printf("%s%c%s%c%f%c%f%c%f\n", name[j], sep, name[i], sep, about[0], sep, about[1], sep, about[2]);
+          if (remgaps) {
+            printf("%s%c%s%c%f%c%f%c%f%c%d\n", name[j], sep, name[i], sep, about[0], sep, about[1], sep, about[2], sep, gapsites);
+          } else {
+            printf("%s%c%s%c%f%c%f%c%f\n", name[j], sep, name[i], sep, about[0], sep, about[1], sep, about[2]);
+          }
         }
       }
     }
   }
   else {
     // regular TSV matrix output
-
     // header seq
     if (corner){
       if(snpdists){
@@ -274,25 +321,23 @@ int main(int argc, char* argv[])
       printf("%c%s", sep, name[j]);
     }
     printf("\n");
-
     // Output the distance matrix to stdout
     // (does full matrix, wasted computation i know)
     for (int j = 0; j < N; j++) {
       printf("%s", name[j]);
-      for (int i=0; i < N; i++) {
+      for (int i = 0; i < N; i++) {
         if(snpdists){
-          size_t d = distance(seq[j], seq[i], L);
+          size_t d = distance(seq[j], seq[i], L, remgaps, usesite);
           printf("%c%zu", sep, d);
         } else{
           double about[3];
-          literaldistance(seq[j], seq[i], L, scorematrix, about);
+          literaldistance(seq[j], seq[i], L, scorematrix, about, remgaps, usesite);
           printf("%c%f", sep, about[0]);
         }
       }
       printf("\n");
     }
   }
-
   // free memory
   for (int k = 0; k < N; k++) {
     free(seq[k]);
@@ -300,7 +345,6 @@ int main(int argc, char* argv[])
   }
   free(seq);
   free(name);
-
   return 0;
 }
 
