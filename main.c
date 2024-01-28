@@ -7,7 +7,7 @@
 #include <zlib.h>
 #include <string.h>
 
-#define VERSION "0.0.1"
+#define VERSION "0.0.2"
 #define EXENAME "literal-dists"
 #define GITHUB_URL "https://github.com/kullrich/literal-dists"
 
