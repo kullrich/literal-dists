@@ -94,7 +94,7 @@ URL
 Prints the name and version separated by a space in standard Unix fashion.
 
 ```
-literal-dists 0.0.1
+literal-dists 0.0.2
 ```
 
 ### `literal-dists -q` (quiet mode)
