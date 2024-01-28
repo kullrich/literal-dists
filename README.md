@@ -167,9 +167,10 @@ AgTgAgTA
 
 ### `literal-dists -m` ("molten" output format)
 
-`seq1    seq2   dist    score   nsites`
+`literal-dists -m test/good.aln`
 
 ```
+#seq1	seq2	dist	score	nsites
 seq1	seq1	0.000000	0.000000	8.000000
 seq1	seq2	0.125000	1.000000	8.000000
 seq1	seq3	0.250000	2.000000	8.000000
