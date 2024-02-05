@@ -135,8 +135,9 @@ void show_help(int retcode)
       "  -m\tOutput MOLTEN instead of TSV\n"
       "  -c\tUse comma instead of tab in output\n"
       "  -b\tBlank top left corner cell\n"
+      "  -i\tOutput used sites, scores and gap sites to TSV\n"
       "  -g\tSkip gap sites if gap frequency is met, gap sites [.-NX]\n"
-      "  -z\tGap frequency [default: 0.5]\n" 
+      "  -z\tGap frequency [default: 0.5]\n"
       "URL\n  %s\n"};
   fprintf(out, str, EXENAME, GITHUB_URL);
   exit(retcode);
@@ -146,7 +147,7 @@ void show_help(int retcode)
 int main(int argc, char* argv[])
 {
   // parse command line parameters
-  int opt, quiet = 0, csv = 0, corner = 1, allchars = 0, remgaps = 0, keepcase = 0, molten = 0, snpdists = 0;
+  int opt, quiet = 0, csv = 0, corner = 1, sitestotsv = 0, allchars = 0, remgaps = 0, keepcase = 0, molten = 0, snpdists = 0;
   double gapfreq = 0.5;
   int gapsites = 0;
   while ((opt = getopt(argc, argv, "htqcakmbgz:v")) != -1) {
@@ -159,6 +160,7 @@ int main(int argc, char* argv[])
       case 'k': keepcase = 1; break;
       case 'm': molten = 1; break;
       case 'b': corner = 0; break;
+      case 'i': sitestotsv = 1; break;
       case 'g': remgaps = 1; break;
       case 'z': gapfreq = strtod(optarg, NULL); break;
       case 'v': printf("%s %s\n", EXENAME, VERSION); exit(EXIT_SUCCESS);
@@ -331,10 +333,14 @@ int main(int argc, char* argv[])
         if(snpdists){
           size_t d = distance(seq[j], seq[i], L, remgaps, usesite);
           printf("%c%zu", sep, d);
-        } else{
+        } else {
           double about[3];
           literaldistance(seq[j], seq[i], L, scorematrix, about, remgaps, usesite);
-          printf("%c%f", sep, about[0]);
+          if(sitestotsv) {
+            printf("%c%f/%f/%f/%f", sep, about[0], about[1], about[2], gapsites);
+          } else {
+            printf("%c%f", sep, about[0]);
+          }
         }
       }
       printf("\n");
