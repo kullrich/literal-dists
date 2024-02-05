@@ -273,10 +273,12 @@ int main(int argc, char* argv[])
     for (int i = 0; i < L; i++) {
       gfreq[i] = gfreq[i]/N;
       // printf("gapfreq site: %d = %f\n", i, gfreq[i]);
-      if (gfreq[i] >= gapfreq) {
-        usesite[i] = 0;
-  gapsites += 1;
-  // printf("skip site: %d\n", i);
+      if (gfreq[i] != 0) {
+        if (gfreq[i] >= gapfreq) {
+          usesite[i] = 0;
+          gapsites += 1;
+          // printf("skip site: %d\n", i);
+        }
       }
     }
   }
