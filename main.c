@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
   int opt, quiet = 0, csv = 0, corner = 1, sitestotsv = 0, allchars = 0, remgaps = 0, keepcase = 0, molten = 0, snpdists = 0;
   double gapfreq = 0.5;
   int gapsites = 0;
-  while ((opt = getopt(argc, argv, "htqcakmbgz:v")) != -1) {
+  while ((opt = getopt(argc, argv, "htqcakmbigz:v")) != -1) {
     switch (opt) {
       case 'h': show_help(EXIT_SUCCESS); break;
       case 't': snpdists = 1; break;
