@@ -337,7 +337,7 @@ int main(int argc, char* argv[])
           double about[3];
           literaldistance(seq[j], seq[i], L, scorematrix, about, remgaps, usesite);
           if(sitestotsv) {
-            printf("%c%f/%f/%f/%f", sep, about[0], about[1], about[2], gapsites);
+            printf("%c%f/%f/%f/%d", sep, about[0], about[1], about[2], gapsites);
           } else {
             printf("%c%f", sep, about[0]);
           }
