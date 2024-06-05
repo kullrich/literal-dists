@@ -124,8 +124,6 @@ void show_help(int retcode)
   
   static const char str[] = {
       "SYNOPSIS\n  Pairwise literal distance matrix from a FASTA alignment\n"
-      "USAGE\n  %s [options] -f alignment.fasta[.gz] > matrix.tsv\n"
-      "or\n"
       "USAGE\n  %s [options] < alignment.fasta[.gz] > matrix.tsv\n"
       "OPTIONS\n"
       "  -h\tShow this help\n"
@@ -140,7 +138,6 @@ void show_help(int retcode)
       "  -i\tOutput used sites, scores and gap sites to TSV\n"
       "  -g\tSkip gap sites if gap frequency is met, gap sites [.-NX]\n"
       "  -z\tGap frequency [default: 0.5]\n"
-      "  -f\tInput FASTA file\n"
       "URL\n  %s\n"};
   fprintf(out, str, EXENAME, EXENAME, GITHUB_URL);
   exit(retcode);
@@ -150,10 +147,10 @@ void show_help(int retcode)
 int main(int argc, char* argv[])
 {
   // parse command line parameters
-  int opt, quiet = 0, csv = 0, corner = 1, sitestotsv = 0, allchars = 0, remgaps = 0, keepcase = 0, molten = 0, snpdists = 0; fasta_file = 0;
+  int opt, quiet = 0, csv = 0, corner = 1, sitestotsv = 0, allchars = 0, remgaps = 0, keepcase = 0, molten = 0, snpdists = 0;
   double gapfreq = 0.5;
   int gapsites = 0;
-  while ((opt = getopt(argc, argv, "htqcakmbigz:vf")) != -1) {
+  while ((opt = getopt(argc, argv, "htqcakmbigz:v")) != -1) {
     switch (opt) {
       case 'h': show_help(EXIT_SUCCESS); break;
       case 't': snpdists = 1; break;
@@ -176,24 +173,23 @@ int main(int argc, char* argv[])
   }
   // open filename via libz
   gzFile fp;
-  if (fasta_file) {
-    if (optind >= argc) {
-      show_help(EXIT_FAILURE);
-      return 0;
-    }
-    const char* fasta = argv[optind];
-    fp = gzopen(fasta, "r");
-    if (!fp) {
-      fprintf(stderr, "ERROR: Could not open filename '%s'\n", fasta);
-      exit(EXIT_FAILURE);
-    }
-  } else {
-    fp = gzdopen(fileno(stdin), "r");
-    if (!fp) {
-      fprintf(stderr, "ERROR: Could not open stdin\n");
-      exit(EXIT_FAILURE);
-    }
+  if (optind >= argc) {
+    show_help(EXIT_FAILURE);
+    return 0;
   }
+  const char* fasta = argv[optind];
+  fp = gzopen(fasta, "r");
+  if (!fp) {
+    fprintf(stderr, "ERROR: Could not open filename '%s'\n", fasta);
+    exit(EXIT_FAILURE);
+  }
+  //} else {
+    //fp = gzdopen(fileno(stdin), "r");
+    //if (!fp) {
+      //fprintf(stderr, "ERROR: Could not open stdin\n");
+      //exit(EXIT_FAILURE);
+    //}
+  //}
   // load all the sequences
   char** seq = calloc(MAX_SEQ, sizeof(char*));
   char** name = calloc(MAX_SEQ, sizeof(char*));
