@@ -139,7 +139,7 @@ void show_help(int retcode)
       "  -g\tSkip gap sites if gap frequency is met, gap sites [.-NX]\n"
       "  -z\tGap frequency [default: 0.5]\n"
       "URL\n  %s\n"};
-  fprintf(out, str, EXENAME, EXENAME, GITHUB_URL);
+  fprintf(out, str, EXENAME, GITHUB_URL);
   exit(retcode);
 }
 
