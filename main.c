@@ -167,7 +167,7 @@ int main(int argc, char* argv[])
       case 'g': remgaps = 1; break;
       case 'z': gapfreq = strtod(optarg, NULL); break;
       case 'v': printf("%s %s\n", EXENAME, VERSION); exit(EXIT_SUCCESS);
-      case 'f': fasta_file = 1; break;
+      case 'f': if (strcmp(optarg, "-i") == 0) { fasta_file = 1; } else { fasta_file = 0; } break;
       default: show_help(EXIT_FAILURE);
     }
   }
