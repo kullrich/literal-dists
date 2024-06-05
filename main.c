@@ -129,7 +129,7 @@ void show_help(int retcode)
       "or\n"
       "USAGE\n  %s [options] < alignment.fasta[.gz] > matrix.tsv\n"
       "or\n"
-      "USAGE\n  [z]cat alignment.fasta[.gz] | %s [options] > matrix.tsv\n"
+      "USAGE\n  [gz]cat alignment.fasta[.gz] | %s [options] > matrix.tsv\n"
       "OPTIONS\n"
       "  -h\tShow this help\n"
       "  -v\tPrint version and exit\n"
