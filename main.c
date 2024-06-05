@@ -173,23 +173,20 @@ int main(int argc, char* argv[])
   }
   // open filename via libz
   gzFile fp;
-  if (optind >= argc) {
-    show_help(EXIT_FAILURE);
-    return 0;
+  if (optind >= argc || !argv[optind]) {
+    fp = gzdopen(fileno(stdin), "r");
+    if (!fp) {
+      fprintf(stderr, "ERROR: Could not open standard input\n");
+      exit(EXIT_FAILURE);
+    }
+  } else {
+    const char* fasta = argv[optind];
+    fp = gzopen(fasta, "r");
+    if (!fp) {
+      fprintf(stderr, "ERROR: Could not open filename '%s'\n", fasta);
+      exit(EXIT_FAILURE);
+    }
   }
-  const char* fasta = argv[optind];
-  fp = gzopen(fasta, "r");
-  if (!fp) {
-    fprintf(stderr, "ERROR: Could not open filename '%s'\n", fasta);
-    exit(EXIT_FAILURE);
-  }
-  //} else {
-    //fp = gzdopen(fileno(stdin), "r");
-    //if (!fp) {
-      //fprintf(stderr, "ERROR: Could not open stdin\n");
-      //exit(EXIT_FAILURE);
-    //}
-  //}
   // load all the sequences
   char** seq = calloc(MAX_SEQ, sizeof(char*));
   char** name = calloc(MAX_SEQ, sizeof(char*));
