@@ -142,7 +142,7 @@ void show_help(int retcode)
       "  -z\tGap frequency [default: 0.5]\n"
       "  -f\tInput FASTA file\n"
       "URL\n  %s\n"};
-  fprintf(out, str, EXENAME, GITHUB_URL);
+  fprintf(out, str, EXENAME, VERSION, GITHUB_URL);
   exit(retcode);
 }
 
@@ -150,7 +150,7 @@ void show_help(int retcode)
 int main(int argc, char* argv[])
 {
   // parse command line parameters
-  int opt, quiet = 0, csv = 0, corner = 1, sitestotsv = 0, allchars = 0, remgaps = 0, keepcase = 0, molten = 0, snpdists = 0;
+  int opt, quiet = 0, csv = 0, corner = 1, sitestotsv = 0, allchars = 0, remgaps = 0, keepcase = 0, molten = 0, snpdists = 0; fasta_file = 0;
   double gapfreq = 0.5;
   int gapsites = 0;
   while ((opt = getopt(argc, argv, "htqcakmbigz:vf")) != -1) {
