@@ -125,7 +125,11 @@ void show_help(int retcode)
   
   static const char str[] = {
       "SYNOPSIS\n  Pairwise literal distance matrix from a FASTA alignment\n"
+      "USAGE\n  %s [options] alignment.fasta[.gz] > matrix.tsv\n"
+      "or\n"
       "USAGE\n  %s [options] < alignment.fasta[.gz] > matrix.tsv\n"
+      "or\n"
+      "USAGE\n  [z]cat alignment.fasta[.gz] | %s [options] > matrix.tsv\n"
       "OPTIONS\n"
       "  -h\tShow this help\n"
       "  -v\tPrint version and exit\n"
@@ -140,7 +144,7 @@ void show_help(int retcode)
       "  -g\tSkip gap sites if gap frequency is met, gap sites [.-NX]\n"
       "  -z\tGap frequency [default: 0.5]\n"
       "URL\n  %s\n"};
-  fprintf(out, str, EXENAME, GITHUB_URL);
+  fprintf(out, str, EXENAME, EXENAME, EXENAME, GITHUB_URL);
   exit(retcode);
 }
 
