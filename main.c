@@ -1,6 +1,7 @@
 #include "kseq.h"
 #include <getopt.h>
 #include <stdio.h>
+#include <sys/select.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -174,10 +175,25 @@ int main(int argc, char* argv[])
   // open filename via libz
   gzFile fp;
   if (optind >= argc || !argv[optind]) {
-    fp = gzdopen(fileno(stdin), "r");
-    if (!fp) {
-      fprintf(stderr, "ERROR: Could not open standard input\n");
+    fd_set fds;
+    struct timeval tv;
+    FD_ZERO(&fds);
+    FD_SET(fileno(stdin), &fds);
+    tv.tv_sec = 0;
+    tv.tv_usec = 0;
+    int ready = select(fileno(stdin) + 1, &fds, NULL, NULL, &tv);
+    if (ready == -1) {
+      perror("select");
       exit(EXIT_FAILURE);
+    } else if (ready == 0) {
+      fprintf(stderr, "ERROR: Standard input is empty\n");
+      exit(EXIT_FAILURE);
+    } else {
+      fp = gzdopen(fileno(stdin), "r");
+      if (!fp) {
+        fprintf(stderr, "ERROR: Could not open standard input\n");
+        exit(EXIT_FAILURE);
+      }
     }
   } else {
     const char* fasta = argv[optind];
