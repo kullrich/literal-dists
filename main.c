@@ -179,7 +179,7 @@ int main(int argc, char* argv[])
     struct timeval tv;
     FD_ZERO(&fds);
     FD_SET(fileno(stdin), &fds);
-    tv.tv_sec = 0;
+    tv.tv_sec = 1;
     tv.tv_usec = 0;
     int ready = select(fileno(stdin) + 1, &fds, NULL, NULL, &tv);
     if (ready == -1) {
