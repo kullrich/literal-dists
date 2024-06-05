@@ -191,7 +191,7 @@ int main(int argc, char* argv[])
       exit(EXIT_FAILURE);
     } else if (ready == 0) {
       fprintf(stderr, "ERROR: Standard input is empty\n");
-      exit(EXIT_FAILURE);
+      show_help(EXIT_FAILURE);
     } else {
       fp = gzdopen(fileno(stdin), "r");
       if (!fp) {
