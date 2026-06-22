@@ -1,6 +1,6 @@
 
 CC = gcc
-CFLAGS = -Wall -Wextra -Ofast -std=c99 
+CFLAGS = -Wall -Wextra -O3 -ffast-math -std=c99 
 LIBS = -lz -lm
 
 EXE = literal-dists
